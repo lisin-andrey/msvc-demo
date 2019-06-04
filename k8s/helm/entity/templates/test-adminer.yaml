@@ -1,0 +1,30 @@
+{{- $dictAdminerModule := dict "module" "adminer" "releaseName" .Release.Name -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-db-adminer-svc" .Release.Name | quote }}
+  labels:
+    {{- include "entity.labels" $dictAdminerModule | indent 4 }}  
+spec:
+  type: LoadBalancer
+  selector:
+    {{- include "entity.labels" $dictAdminerModule | indent 4 }}  
+  ports:
+  - port: 8080
+    targetPort: 8080
+
+---
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: {{ printf "%s-db-adminer-pod" .Release.Name | quote }}
+  labels:
+    {{- include "entity.labels" $dictAdminerModule | indent 4 }}  
+spec:
+  containers:
+  - image: adminer
+    name: {{ printf "%s-db-adminer-ctr" .Release.Name | quote }}
+    ports:
+    - containerPort: 8080
+      protocol: TCP

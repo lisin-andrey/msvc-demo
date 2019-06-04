@@ -1,0 +1,18 @@
+# Program binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+/entity-service/entity-service
+/entity-web/entity-web
+
+# Test binaries and reports
+*.test
+*.out
+
+# JetBrains IDEs: IntelliJ, GoLand and etc
+*.iws
+.idea/
+.idea_modules/
+.DS_Store

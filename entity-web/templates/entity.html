@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <title>Entity {{.ID}}</title>
+  </head>
+  <body>
+    <div class="panel panel-default">
+      <div class="panel-heading">{{.Name}} ( {{.ID}} )</div>
+      <div class="panel-body">
+        <a href="/entities" class="btn btn-default btn-xs">
+          <span class="glyphicon glyphicon glyphicon-list" /> Return to entites
+        </a>     
+        <a href="/update?id={{.ID}}" class="btn btn-default btn-xs">
+          <span class="glyphicon glyphicon-edit" /> Update
+        </a>              
+        <a href="/delete?id={{.ID}}" class="btn btn-default btn-xs"
+          onclick="return confirm('Are you sure to delete entity with ID={{.ID}} ?')" >
+          <span class="glyphicon glyphicon-trash" /> Delete
+        </a>              
+      </div>
+    </div>
+    
+    <br />
+  
+    <div class="container-table">
+      <div class="row">
+        <div class="col-md-1 col-md-offset-1 bg-info text-white ">ID</div>
+        <div class="col-md-10">{{.ID}}</div>
+      </div>     
+      <div class="row">
+        <div class="col-md-1 col-md-offset-1 bg-info text-white">Name</div>
+        <div class="col-md-10">{{.Name}}</div>
+      </div>
+      <div class="row">
+        <div class="col-md-1 col-md-offset-1 bg-info text-white">Created</div>
+        <div class="col-md-10">{{.Created.Format "2006.01.02 15:04:05"}}</div>
+      </div>
+      <div class="row">
+        <div class="col-md-1 col-md-offset-1 bg-info text-white">Last Updated</div>
+        <div class="col-md-10">{{.LastUpdated.Format "2006.01.02 15:04:05"}}</div>
+      </div>
+      <div class="row">
+        <div class="col-md-1 col-md-offset-1 bg-info text-white">Last Operator</div>
+        <div class="col-md-10">{{.LastOperator}}</div>
+      </div>
+      <div class="row">
+        <div class="col-md-1 col-md-offset-1 bg-info text-white">Description</div>
+        <div class="col-md-10">{{.Descr}}</div>
+      </div>     
+    </div>
+  </body>
+</html>

@@ -1,0 +1,23 @@
+Thank you for installing {{ .Chart.Name }}
+The release is named {{ .Release.Name }}
+
+To learn more about the release, try:
+  $ helm status {{ .Release.Name }}
+  $ helm get {{ .Release.Name }}
+
+It may take a few minutes for the LoadBalancer IP to be available.
+You can get the application URL by running these commands:
+  Adminner:
+  export ADMINER_SERVICE_IP=$(kubectl get svc {{ printf "%s-db-adminer-svc" .Release.Name }} --namespace {{ .Release.Namespace }}  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$ADMINER_SERVICE_IP:8080
+
+  Required params can be got by command
+  kubectl get cm {{ printf "%s-config" .Release.Name }} -o yaml
+
+  Entity REST service:
+  export REST_SERVICE_IP=$(kubectl get svc {{ printf "%s-rest-svc" .Release.Name }} --namespace {{ .Release.Namespace }}  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$REST_SERVICE_IP:{{ .Values.rest.port }}
+
+  Web application:
+  export WEB_SERVICE_IP=$(kubectl get svc {{ printf "%s-web-svc" .Release.Name }} --namespace {{ .Release.Namespace }}  -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+  echo http://$WEB_SERVICE_IP:{{ .Values.web.port }}

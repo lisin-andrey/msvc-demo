@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <title>Entites</title>
+  </head>
+  <body>
+    <div class="panel panel-default">
+      <div class="panel-heading">Entities:</div>
+      <div class="panel-body">
+{{ $length := len .Messages }}
+{{ if gt $length 0 }} 
+  {{range .Messages}}
+        <div class="alert alert-danger">{{.}}</div>    
+  {{end}}
+        <br />
+{{end}}
+        <a href="/create" class="btn btn-default btn-sm">
+          <span class="glyphicon glyphicon-pencil" /> Create
+        </a>              
+      </div>
+    </div>
+      <table class="table table-hover table-condensed table-bordered">
+        <tr>
+          <th colspan=2>ID</th>
+          <th>Name</th>
+          <th style="width: 100%">Descr</th>
+          <th>Created</th>
+          <th>Last Updated</th>
+          <th>Last Operator</th>
+        </tr>
+{{ range .Entities }}
+        <tr>
+          <td nowrap>
+            <a href="/update?id={{.ID}}" class="btn btn-default btn-xs">
+              <span class="glyphicon glyphicon-edit" />
+            </a>              
+            <a href="/delete?id={{.ID}}" class="btn btn-default btn-xs"
+              onclick="return confirm('Are you sure to delete entity with ID={{.ID}} ?')" >
+              <span class="glyphicon glyphicon-trash" />
+            </a>              
+            <a href="/entity?id={{.ID}}" class="btn btn-default btn-xs">
+              <span class="glyphicon glyphicon-eye-open" />
+            </a>              
+          </td>
+          <td>{{.ID}}</td>
+          <td nowrap>{{.Name}}</td>
+          <td>{{.Descr}}</td>
+          <td nowrap>{{.Created.Format "2006.01.02 15:04:05" }}</td>
+          <td nowrap>{{.LastUpdated.Format "2006.01.02 15:04:05" }}</td>
+          <td nowrap>{{.LastOperator}}</td>
+        </tr>
+{{else}}
+        <tr class="warning" >
+          <td colspan=7>No data found</td>
+        </tr>
+{{end}}
+      </table>
+  </body>
+</html>

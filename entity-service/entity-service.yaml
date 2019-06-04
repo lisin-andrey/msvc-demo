@@ -1,0 +1,10 @@
+timeout: 15s
+svcport: 9090
+#provider: memory
+provider: postgres
+postgres:
+  dbname: msvcdb
+  user: msvcuser
+  pass: '12345'
+  host: db # see docker-compose
+  conn-string:

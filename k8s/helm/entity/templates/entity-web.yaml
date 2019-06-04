@@ -1,0 +1,78 @@
+{{- $dictWebModule := dict "module" "web" "releaseName" .Release.Name -}}
+{{- $configName := printf "%s-config" .Release.Name -}} 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-web-svc" .Release.Name | quote }}
+  labels:
+    {{- include "entity.labels" $dictWebModule | indent 4 }}  
+  annotations:
+    {{- include "entity.annotations" . | indent 4 }}   
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: {{ .Values.web.port | quote }}
+    prometheus.io/path: /-/metrics
+spec:
+  type: LoadBalancer
+  selector:
+   {{- include "entity.labels" $dictWebModule | indent 4 }} 
+  ports:
+  - port: {{ .Values.web.port }}
+    targetPort: {{ .Values.web.port }}
+
+---
+
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-web-dep" .Release.Name | quote }}
+  labels:
+    {{- include "entity.labels" $dictWebModule | indent 4 }}  
+  annotations:
+    {{- include "entity.annotations" . | indent 4 }}  
+spec:
+  replicas: {{ .Values.web.replicaCount }}
+  minReadySeconds: {{ .Values.web.minReadySeconds }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:        # change one by one (1-new-create, 1-old-delete)
+      maxSurge: 1         
+      maxUnavailable: 0
+  template:
+    metadata:
+      name: {{ printf "%s-web-pod" .Release.Name | quote }}
+      labels:
+        {{- include "entity.labels" $dictWebModule | indent 8 }}  
+      annotations:
+        {{- include "entity.annotations" . | indent 8 }}      
+    spec:
+      containers:
+      - name: {{ printf "%s-web-ctr" .Release.Name | quote }}
+        image: {{ include "entity.image" .Values.web.image | quote }}
+        imagePullPolicy: {{ .Values.web.image.pullPolicy | quote }}
+        command: ['entity-web']
+        env:
+        - name: DEMO_APP_PORT
+          value: {{ .Values.web.port | quote }}
+        - name: DEMO_TIMEOUT
+          value: {{ .Values.web.httpTimeout | quote }}
+        - name: DEMO_ENTITY_REST_URL
+          valueFrom: 
+            configMapKeyRef:
+              name: {{ $configName }}
+              key: REST_URL
+
+        resources:
+          {{- toYaml .Values.web.resources | trim | nindent 10 }}
+        readinessProbe:
+          initialDelaySeconds: {{ .Values.web.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.web.readinessProbe.periodSeconds }}
+          httpGet:
+            path: /-/ready
+            port: {{ .Values.web.port }}
+        livenessProbe:
+          initialDelaySeconds: {{ .Values.web.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.web.livenessProbe.periodSeconds }}
+          httpGet:
+            path: /-/healthy
+            port: {{ .Values.web.port }}

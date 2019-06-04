@@ -1,0 +1,100 @@
+{{- $dictRestModule := dict "module" "rest-svc" "releaseName" .Release.Name -}}
+{{- $configName := printf "%s-config" .Release.Name -}} 
+{{- $secretName := printf "%s-secret" .Release.Name -}} 
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-rest-svc" .Release.Name | quote }}
+  labels:
+    {{- include "entity.labels" $dictRestModule | indent 4 }}  
+  annotations:
+    {{- include "entity.annotations" . | indent 4 }}   
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: {{ .Values.rest.port | quote }}
+    prometheus.io/path: /-/metrics
+spec:
+  type: LoadBalancer
+  selector:
+    {{- include "entity.labels" $dictRestModule | indent 4 }}  
+  ports:
+  - port: {{ .Values.rest.port }}
+    targetPort: {{ .Values.rest.port }}
+
+---
+
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: {{ printf "%s-rest-dep" .Release.Name | quote }}
+  labels:
+    {{- include "entity.labels" $dictRestModule | indent 4 }}  
+  annotations:
+    {{- include "entity.annotations" . | indent 4 }}   
+spec:
+  replicas: {{ .Values.rest.replicaCount }}
+  minReadySeconds: {{ .Values.rest.minReadySeconds }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:        # change one by one (1-new-create, 1-old-delete)
+      maxSurge: 1         
+      maxUnavailable: 0
+  template:
+    metadata:
+      name: {{ printf "%s-rest-pod" .Release.Name | quote }}
+      labels:
+        {{- include "entity.labels" $dictRestModule | indent 8 }}  
+      annotations:
+        {{- include "entity.annotations" . | indent 8 }}      
+    spec:
+      containers:
+      - name: {{ printf "%s-rest-ctr" .Release.Name | quote }}
+        image: {{ include "entity.image" .Values.rest.image | quote }}
+        imagePullPolicy: {{ .Values.rest.image.pullPolicy | quote }}
+        command: ['entity-service']
+        env:
+        - name: DEMO_SVCPORT
+          value: {{ .Values.rest.port | quote }}
+        - name: DEMO_TIMEOUT
+          value: {{ .Values.rest.httpTimeout | quote }}
+        - name: DEMO_PROVIDER
+          valueFrom: 
+            configMapKeyRef:
+              name: {{ $configName }}
+              key: DB_PROVIDER
+        - name: DEMO_POSTGRES_HOST
+          valueFrom: 
+            configMapKeyRef:
+              name: {{ $configName }}
+              key: POSTGRES_HOST
+        - name: DEMO_POSTGRES_DBNAME
+          valueFrom: 
+            configMapKeyRef:
+              name: {{ $configName }}
+              key: POSTGRES_DBNAME
+        - name: DEMO_POSTGRES_USER
+          valueFrom: 
+            configMapKeyRef:
+              name: {{ $configName }}
+              key: POSTGRES_USER
+        - name: DEMO_POSTGRES_PASS
+          valueFrom: 
+            secretKeyRef:
+              name: {{ $secretName }}
+              key: POSTGRES_PASS
+
+        resources:
+          {{- toYaml .Values.rest.resources | trim | nindent 10 }}
+       
+        readinessProbe:
+          initialDelaySeconds: {{ .Values.rest.readinessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.rest.readinessProbe.periodSeconds }}
+          httpGet:
+            path: /-/ready
+            port: {{ .Values.rest.port }}
+        livenessProbe:
+          initialDelaySeconds: {{ .Values.rest.livenessProbe.initialDelaySeconds }}
+          periodSeconds: {{ .Values.rest.livenessProbe.periodSeconds }}
+          httpGet:
+            path: /-/healthy
+            port: {{ .Values.rest.port }}

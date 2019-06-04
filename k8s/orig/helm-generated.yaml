@@ -1,0 +1,378 @@
+# NAME:   eee
+# REVISION: 1
+# RELEASED: Thu Jun 20 01:29:22 2019
+# CHART: entity-0.1.0
+
+# Source: entity/templates/entity-configs.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: "eee-secret"
+  labels:    
+    app: "eee"  
+  annotations:    
+    app.kubernetes.io/name: "entity"
+    helm.sh/chart: "entity-0.1.0"
+    app.kubernetes.io/instance: "eee"
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: "Tiller"  
+type: Opaque
+data:
+  POSTGRES_PASS: "MTIzNDU="
+---
+# Source: entity/templates/entity-configs.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: "eee-config"
+  labels:    
+    app: "eee"  
+  annotations:    
+    app.kubernetes.io/name: "entity"
+    helm.sh/chart: "entity-0.1.0"
+    app.kubernetes.io/instance: "eee"
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: "Tiller"  
+data:
+  REST_URL: "http://eee-rest-svc.default:9090"
+  DB_PROVIDER: "postgres"
+  POSTGRES_DBNAME: "msvcdb"
+  POSTGRES_USER: "msvcuser"
+  POSTGRES_HOST: "eee-db-sts-0.eee-db-svc.default"
+---
+# Source: entity/templates/entity-db.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "eee-db-svc"
+  labels:    
+    app: "eee"
+    module: "db"  
+  annotations:    
+    app.kubernetes.io/name: "entity"
+    helm.sh/chart: "entity-0.1.0"
+    app.kubernetes.io/instance: "eee"
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: "Tiller"   
+spec:
+  clusterIP: None
+  selector:    
+    app: "eee"
+    module: "db"  
+  ports:
+  - name: "postgres"
+    port: 5432
+---
+# Source: entity/templates/entity-rest.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "eee-rest-svc"
+  labels:    
+    app: "eee"
+    module: "rest-svc"  
+  annotations:    
+    app.kubernetes.io/name: "entity"
+    helm.sh/chart: "entity-0.1.0"
+    app.kubernetes.io/instance: "eee"
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: "Tiller"   
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: "9090"
+    prometheus.io/path: /-/metrics
+spec:
+  type: LoadBalancer
+  selector:    
+    app: "eee"
+    module: "rest-svc"  
+  ports:
+  - port: 9090
+    targetPort: 9090
+---
+# Source: entity/templates/entity-web.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "eee-web-svc"
+  labels:    
+    app: "eee"
+    module: "web"  
+  annotations:    
+    app.kubernetes.io/name: "entity"
+    helm.sh/chart: "entity-0.1.0"
+    app.kubernetes.io/instance: "eee"
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: "Tiller"   
+    prometheus.io/scrape: 'true'
+    prometheus.io/port: "9091"
+    prometheus.io/path: /-/metrics
+spec:
+  type: LoadBalancer
+  selector:    
+    app: "eee"
+    module: "web" 
+  ports:
+  - port: 9091
+    targetPort: 9091
+---
+# Source: entity/templates/test-adminer.yaml
+apiVersion: v1
+kind: Service
+metadata:
+  name: "eee-db-adminer-svc"
+  labels:    
+    app: "eee"
+    module: "adminer"  
+spec:
+  type: LoadBalancer
+  selector:    
+    app: "eee"
+    module: "adminer"  
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+# Source: entity/templates/test-adminer.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "eee-db-adminer-pod"
+  labels:    
+    app: "eee"
+    module: "adminer"  
+spec:
+  containers:
+  - image: adminer
+    name: "eee-db-adminer-ctr"
+    ports:
+    - containerPort: 8080
+      protocol: TCP
+---
+# Source: entity/templates/entity-rest.yaml
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: "eee-rest-dep"
+  labels:    
+    app: "eee"
+    module: "rest-svc"  
+  annotations:    
+    app.kubernetes.io/name: "entity"
+    helm.sh/chart: "entity-0.1.0"
+    app.kubernetes.io/instance: "eee"
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: "Tiller"   
+spec:
+  replicas: 2
+  minReadySeconds: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:        # change one by one (1-new-create, 1-old-delete)
+      maxSurge: 1         
+      maxUnavailable: 0
+  template:
+    metadata:
+      name: "eee-rest-pod"
+      labels:        
+        app: "eee"
+        module: "rest-svc"  
+      annotations:        
+        app.kubernetes.io/name: "entity"
+        helm.sh/chart: "entity-0.1.0"
+        app.kubernetes.io/instance: "eee"
+        app.kubernetes.io/version: "1.0"
+        app.kubernetes.io/managed-by: "Tiller"      
+    spec:
+      containers:
+      - name: "eee-rest-ctr"
+        image: "docker.io/alisin69/msvc-entity-service:latest"
+        imagePullPolicy: "IfNotPresent"
+        command: ['entity-service']
+        env:
+        - name: DEMO_SVCPORT
+          value: "9090"
+        - name: DEMO_TIMEOUT
+          value: "15s"
+        - name: DEMO_PROVIDER
+          valueFrom: 
+            configMapKeyRef:
+              name: eee-config
+              key: DB_PROVIDER
+        - name: DEMO_POSTGRES_HOST
+          valueFrom: 
+            configMapKeyRef:
+              name: eee-config
+              key: POSTGRES_HOST
+        - name: DEMO_POSTGRES_DBNAME
+          valueFrom: 
+            configMapKeyRef:
+              name: eee-config
+              key: POSTGRES_DBNAME
+        - name: DEMO_POSTGRES_USER
+          valueFrom: 
+            configMapKeyRef:
+              name: eee-config
+              key: POSTGRES_USER
+        - name: DEMO_POSTGRES_PASS
+          valueFrom: 
+            secretKeyRef:
+              name: eee-secret
+              key: POSTGRES_PASS
+
+        resources:
+          limits:
+            cpu: 500m
+            memory: 50Mi
+          requests:
+            cpu: 200m
+            memory: 10Mi
+       
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          httpGet:
+            path: /-/ready
+            port: 9090
+        livenessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          httpGet:
+            path: /-/healthy
+            port: 9090
+---
+# Source: entity/templates/entity-web.yaml
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  name: "eee-web-dep"
+  labels:    
+    app: "eee"
+    module: "web"  
+  annotations:    
+    app.kubernetes.io/name: "entity"
+    helm.sh/chart: "entity-0.1.0"
+    app.kubernetes.io/instance: "eee"
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: "Tiller"  
+spec:
+  replicas: 1
+  minReadySeconds: 5
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:        # change one by one (1-new-create, 1-old-delete)
+      maxSurge: 1         
+      maxUnavailable: 0
+  template:
+    metadata:
+      name: "eee-web-pod"
+      labels:        
+        app: "eee"
+        module: "web"  
+      annotations:        
+        app.kubernetes.io/name: "entity"
+        helm.sh/chart: "entity-0.1.0"
+        app.kubernetes.io/instance: "eee"
+        app.kubernetes.io/version: "1.0"
+        app.kubernetes.io/managed-by: "Tiller"      
+    spec:
+      containers:
+      - name: "eee-web-ctr"
+        image: "docker.io/alisin69/msvc-entity-web:latest"
+        imagePullPolicy: "IfNotPresent"
+        command: ['entity-web']
+        env:
+        - name: DEMO_APP_PORT
+          value: "9091"
+        - name: DEMO_TIMEOUT
+          value: "15s"
+        - name: DEMO_ENTITY_REST_URL
+          valueFrom: 
+            configMapKeyRef:
+              name: eee-config
+              key: REST_URL
+
+        resources:
+          limits:
+            cpu: 500m
+            memory: 50Mi
+          requests:
+            cpu: 200m
+            memory: 10Mi
+        readinessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          httpGet:
+            path: /-/ready
+            port: 9091
+        livenessProbe:
+          initialDelaySeconds: 5
+          periodSeconds: 2
+          httpGet:
+            path: /-/healthy
+            port: 9091
+---
+# Source: entity/templates/entity-db.yaml
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: "eee-db-sts"
+  labels:    
+    app: "eee"
+    module: "db"  
+  annotations:    
+    app.kubernetes.io/name: "entity"
+    helm.sh/chart: "entity-0.1.0"
+    app.kubernetes.io/instance: "eee"
+    app.kubernetes.io/version: "1.0"
+    app.kubernetes.io/managed-by: "Tiller"   
+spec:
+  serviceName: "eee-db-svc"
+  replicas: 1
+  template:
+    metadata:
+      labels:        
+        app: "eee"
+        module: "db"  
+      annotations:        
+        app.kubernetes.io/name: "entity"
+        helm.sh/chart: "entity-0.1.0"
+        app.kubernetes.io/instance: "eee"
+        app.kubernetes.io/version: "1.0"
+        app.kubernetes.io/managed-by: "Tiller"      
+    spec:
+      containers:
+      - name: "eee-db-ctr"
+        image: "docker.io/alisin69/msvc-pgdb:latest"
+        imagePullPolicy: "IfNotPresent"
+        env:
+        - name: POSTGRES_DB
+          valueFrom: 
+            configMapKeyRef:
+              name: eee-config
+              key: POSTGRES_DBNAME
+        - name: POSTGRES_USER
+          valueFrom: 
+            configMapKeyRef:
+              name: eee-config
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: eee-secret
+              key: POSTGRES_PASS
+        ports:
+        - name: "postgres"
+          containerPort: 5432
+        volumeMounts:
+        - name: postgredb
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres
+
+  volumeClaimTemplates:
+  - metadata:
+      name: postgredb
+    spec:
+      resources:
+        requests:
+          storage: 3Gi
+      accessModes: [ReadWriteOnce]

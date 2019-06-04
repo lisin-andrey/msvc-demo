@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ printf "%s-secret" .Release.Name | quote }}
+  labels:
+    {{- include "entity.common.labels" . | indent 4 }}  
+  annotations:
+    {{- include "entity.annotations" . | indent 4 }}  
+type: Opaque
+data:
+  POSTGRES_PASS: {{ .Values.db.postgres.pwd | b64enc | quote }}
+
+--- 
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ printf "%s-config" .Release.Name | quote }}
+  labels:
+    {{- include "entity.common.labels" . | indent 4 }}  
+  annotations:
+    {{- include "entity.annotations" . | indent 4 }}  
+data:
+  {{- /* #<rest-svc-name>.<namespace>:<rest-svc-port> */}}
+  REST_URL: {{ printf "http://%s-rest-svc.%s:%d" .Release.Name .Release.Namespace (int64 .Values.rest.port) | quote }}
+  DB_PROVIDER: {{ .Values.rest.dbProvider | quote }}
+  POSTGRES_DBNAME: {{ .Values.db.postgres.dbName | quote }}
+  POSTGRES_USER: {{ .Values.db.postgres.user | quote }}
+  {{- /* #<db-sts-name>-<db-sts-index>.<db-svc-name>.<namespace> */}}
+  POSTGRES_HOST: {{ printf "%s-db-sts-0.%s-db-svc.%s" .Release.Name .Release.Name .Release.Namespace | quote}}
+  

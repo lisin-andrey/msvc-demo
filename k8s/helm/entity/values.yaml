@@ -1,0 +1,98 @@
+# Default values for entity.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# db module 
+db:
+  replicaCount: 1
+  image:
+    repository: docker.io
+    name: alisin69/msvc-pgdb
+    tag: latest
+    pullPolicy: IfNotPresent
+  name: postgres
+  postgres:
+    dbName: msvcdb
+    user: msvcuser
+    port: 5432 
+    pwd: '12345'
+  resources:
+    requests:
+      storage: 3Gi
+  accessModes: [ "ReadWriteOnce" ]
+
+# entity-rest service module
+rest:
+  replicaCount: 2
+  image:
+    repository: docker.io
+    name: alisin69/msvc-entity-service
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 9090
+  # http server timeout
+  httpTimeout: 15s
+
+  # wait for N sec (see k8s.Deployment.minReadySeconds)
+  minReadySeconds: 10
+
+  # see k8s..livenessProbe
+  livenessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 2
+
+  # see k8s..readinessProbe
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 2
+
+  dbProvider: postgres
+  # resource section for rest service
+  resources:
+    requests:
+      cpu: 200m
+      memory: 10Mi
+    limits:
+      cpu: 500m
+      memory: 50Mi         
+
+# web app module
+web:
+  replicaCount: 1
+  image:
+    repository: docker.io
+    name: alisin69/msvc-entity-web
+    tag: latest
+    pullPolicy: IfNotPresent
+  port: 9091
+  # http server timeout
+  httpTimeout: 15s
+
+  # wait for N sec (see k8s.Deployment.minReadySeconds)
+  minReadySeconds: 5
+
+  # see k8s..livenessProbe
+  livenessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 2
+
+  # see k8s..readinessProbe
+  readinessProbe:
+    initialDelaySeconds: 5
+    periodSeconds: 2
+
+  # resource section for web app
+  resources:
+    requests:
+      cpu: 200m
+      memory: 10Mi
+    limits:
+      cpu: 500m
+      memory: 50Mi         
+
+nameOverride: ""
+#fullnameOverride: ""
+
+#nodeSelector: {}
+#tolerations: []
+#affinity: {}

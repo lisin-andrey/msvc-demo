@@ -1,0 +1,74 @@
+{{- $dictDbModule := dict "module" "db" "releaseName" .Release.Name -}}
+{{- $configName := printf "%s-config" .Release.Name -}} 
+{{- $secretName := printf "%s-secret" .Release.Name -}} 
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ printf "%s-db-svc" .Release.Name | quote }}
+  labels:
+    {{- include "entity.labels" $dictDbModule | indent 4 }}  
+  annotations:
+    {{- include "entity.annotations" . | indent 4 }}   
+spec:
+  clusterIP: None
+  selector:
+    {{- include "entity.labels" $dictDbModule | indent 4 }}  
+  ports:
+  - name: {{ .Values.db.name | quote }}
+    port: {{ .Values.db.postgres.port }}
+
+---
+
+apiVersion: apps/v1beta1
+kind: StatefulSet
+metadata:
+  name: {{ printf "%s-db-sts" .Release.Name | quote }}
+  labels:
+    {{- include "entity.labels" $dictDbModule | indent 4 }}  
+  annotations:
+    {{- include "entity.annotations" . | indent 4 }}   
+spec:
+  serviceName: {{ printf "%s-db-svc" .Release.Name | quote }}
+  replicas: {{ .Values.db.replicaCount }}
+  template:
+    metadata:
+      labels:
+        {{- include "entity.labels" $dictDbModule | indent 8 }}  
+      annotations:
+        {{- include "entity.annotations" . | indent 8 }}      
+    spec:
+      containers:
+      - name: {{ printf "%s-db-ctr" .Release.Name | quote }}
+        image: {{ include "entity.image" .Values.db.image | quote }}
+        imagePullPolicy: {{ .Values.db.image.pullPolicy | quote }}
+        env:
+        - name: POSTGRES_DB
+          valueFrom: 
+            configMapKeyRef:
+              name: {{ $configName }}
+              key: POSTGRES_DBNAME
+        - name: POSTGRES_USER
+          valueFrom: 
+            configMapKeyRef:
+              name: {{ $configName }}
+              key: POSTGRES_USER
+        - name: POSTGRES_PASSWORD
+          valueFrom: 
+            secretKeyRef:
+              name: {{ $secretName }}
+              key: POSTGRES_PASS
+        ports:
+        - name: {{ .Values.db.name | quote }}
+          containerPort: 5432
+        volumeMounts:
+        - name: postgredb
+          mountPath: /var/lib/postgresql/data
+          subPath: postgres
+
+  volumeClaimTemplates:
+  - metadata:
+      name: postgredb
+    spec:
+      resources:
+        {{- toYaml .Values.db.resources | trim | nindent 8 }}
+      accessModes: {{ .Values.db.accessModes }}

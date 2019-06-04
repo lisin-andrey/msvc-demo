@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <title>Update Entity {{.ID}}</title>
+  </head>
+  <body>
+    <div class="panel panel-default">
+      <div class="panel-heading">Create entitiy</div>
+      <div class="panel-body">
+        <a href="/entities" class="btn btn-default btn-sm">
+          <span class="glyphicon glyphicon glyphicon-list" /> Return to entites
+        </a>     
+
+        <br />
+
+        <form class="form-horizontal" role="form" method="POST">
+          <div class="form-group">
+            <label class="col-sm-2 control-label">ID</label>
+            <div class="col-sm-10">
+              <p class="form-control-static">{{.ID}}</p>
+            </div>
+          </div>          
+    
+          <div class="form-group">
+            <label class="col-sm-2 control-label">Name</label>
+            <div class="col-sm-10">
+              <!-- <p class="form-control-static">{{.Name}}</p> -->
+              <input type="text" class="form-control" name="name" id="name" value="{{.Name}}" disabled>
+            </div>
+          </div>      
+          
+          <div class="form-group">
+            <label class="col-sm-2 control-label">Created</label>
+            <div class="col-sm-10">
+              <p class="form-control-static">{{.Created.Format "2006.01.02 15:04:05"}}</p>
+            </div>
+          </div>      
+
+          <div class="form-group">
+              <label class="col-sm-2 control-label">Last Updated</label>
+              <div class="col-sm-10">
+                <p class="form-control-static">{{.LastUpdated.Format "2006.01.02 15:04:05"}}</p>
+              </div>
+            </div>      
+            
+          <div class="form-group">
+            <label for="descr" class="col-sm-2 control-label">Description</label>
+            <div class="col-sm-10">
+              <textarea class="form-control" rows="3" name="descr" id="descr" placeholder="Description (optional)">{{.Descr}}</textarea>
+            </div>
+          </div>          
+          <div class="form-group">
+            <label for="last-operator" class="col-sm-2 control-label">Last Operator</label>
+            <div class="col-sm-10">
+              <input type="text" class="form-control" name="last-operator" id="last-operator" placeholder="Last Operator (required)"
+                value="{{.LastOperator}}">
+            </div>
+          </div>          
+          <div class="form-group">
+              <div class="col-sm-offset-2 col-sm-10">
+                <button type="submit" class="btn btn-default">Update</button>
+              </div>
+          </div>            
+        </form>
+      </div>
+    </div>
+  </body>
+</html>

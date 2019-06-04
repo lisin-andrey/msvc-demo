@@ -1,0 +1,48 @@
+version: '3'
+services: 
+  db:
+    build: "./entity-db-postgres"
+    image: alisin69/msvc-pgdb
+    container_name: db
+    restart: always
+    ports:
+      - 5432:5432
+    environment: 
+      POSTGRES_DB: msvcdb
+      POSTGRES_USER: msvcuser
+      POSTGRES_PASSWORD: '12345'
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080
+
+  entity-service:
+    build: 
+      context: '.'
+      dockerfile: ./entity-service/Dockerfile
+    image: alisin69/msvc-entity-service
+    command: entity-service
+    depends_on: 
+      - db
+    ports:
+      - 9090:9090
+    environment:
+      ENTITY_SVC_CONFIG_FILE: './entity-service.yaml'
+
+  entity-web:
+    build: 
+      context: '.'
+      dockerfile: ./entity-web/Dockerfile
+    image: alisin69/msvc-entity-web
+    command: entity-web
+    depends_on: 
+      - entity-service
+    links:
+      - entity-service
+    ports:
+      - 9091:9091
+    environment:
+      ENTITY_WEB_CONFIG_FILE: './entity-web.yaml'
+      ENTITY_WEB_ENV_PREFIX: DEMO
+      DEMO_ENTITY_REST_URL: 'http://entity-service:9090'
